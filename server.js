@@ -71,4 +71,4 @@ wss.on("connection", async (plivoWs) => {
   plivoWs.on("error", () => { try { gemini?.close(); } catch {} });
 });
 
-server.listen(PORT, () => console.log(`Harsha AI receptionist listening on ${PORT} (host ${HOST})`));
+server.listen(PORT, () => console.log(`Harsha AI receptionist listening on ${PORT}`));
