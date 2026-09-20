@@ -56,15 +56,19 @@ wss.on("connection", async (plivoWs) => {
     return;
   }
 
+  let mediaCount = 0, loggedFirst = false;
   plivoWs.on("message", (raw) => {
     let m;
     try { m = JSON.parse(raw.toString()); } catch { return; }
-    if (m.event === "start") { streamId = m.start?.streamId; console.log("[plivo] start", streamId); return; }
-    if (m.event === "media" && m.media?.payload) {
-      try { gemini.sendAudio(plivoToGemini(m.media.payload)); } catch (e) { /* ignore frame */ }
+    if (m.event === "start") { streamId = m.start?.streamId; console.log("[plivo] START:", JSON.stringify(m.start)); return; }
+    if (m.event === "media") {
+      if (!loggedFirst) { loggedFirst = true; console.log("[plivo] FIRST MEDIA msg:", JSON.stringify(m).slice(0, 300)); }
+      mediaCount++;
+      if (mediaCount % 50 === 0) console.log("[plivo] media frames:", mediaCount);
+      if (m.media?.payload) { try { gemini.sendAudio(plivoToGemini(m.media.payload)); } catch (e) { console.log("[audio] sendAudio err:", e?.message); } }
       return;
     }
-    if (m.event === "stop") { console.log("[plivo] stop"); try { gemini.close(); } catch {} }
+    if (m.event === "stop") { console.log("[plivo] stop. total media frames:", mediaCount); try { gemini.close(); } catch {} }
   });
 
   plivoWs.on("close", () => { console.log("[plivo] closed"); try { gemini?.close(); } catch {} });
