@@ -79,17 +79,10 @@ wss.on("connection", async (plivoWs) => {
     if (m.event === "media") {
       if (!loggedFirst) { loggedFirst = true; console.log("[plivo] FIRST MEDIA msg:", JSON.stringify(m).slice(0, 300)); }
       mediaCount++;
-      if (mediaCount % 50 === 0) console.log("[plivo] media frames:", mediaCount);
+      if (mediaCount % 250 === 0) console.log("[plivo] media frames:", mediaCount);
       if (m.media?.payload) {
-        try {
-          const gem = plivoToGemini(m.media.payload);
-          gemini.sendAudio(gem);
-          if (mediaCount % 50 === 0) {
-            const pcm = b64ToInt16(gem); let peak = 0;
-            for (let k = 0; k < pcm.length; k++) { const a = Math.abs(pcm[k]); if (a > peak) peak = a; }
-            console.log("[audio] frame", mediaCount, "caller peak level:", peak);
-          }
-        } catch (e) { console.log("[audio] sendAudio err:", e?.message); }
+        try { gemini.sendAudio(plivoToGemini(m.media.payload)); }
+        catch (e) { console.log("[audio] sendAudio err:", e?.message); }
       }
       return;
     }
