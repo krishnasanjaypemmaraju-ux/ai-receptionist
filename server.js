@@ -5,7 +5,6 @@ import { openGeminiSession } from "./lib/gemini.js";
 import { plivoToGemini, geminiToPlivo } from "./lib/audio.js";
 
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.PUBLIC_HOST || `localhost:${PORT}`;
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -13,14 +12,17 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (_req, res) => res.send("Harsha AI receptionist is running."));
 
 // Plivo hits this when a (forwarded) call arrives. We answer and open a bidirectional stream.
-function answerXml() {
-  const scheme = HOST.startsWith("localhost") ? "ws" : "wss";
+function answerXml(host) {
+  const scheme = host.startsWith("localhost") ? "ws" : "wss";
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Stream bidirectional="true" keepCallAlive="true" contentType="audio/x-mulaw;rate=8000" audioTrack="inbound">${scheme}://${HOST}/stream</Stream>
+  <Stream bidirectional="true" keepCallAlive="true" contentType="audio/x-mulaw;rate=8000" audioTrack="inbound">${scheme}://${host}/stream</Stream>
 </Response>`;
 }
-app.all("/answer", (_req, res) => { res.type("application/xml").send(answerXml()); });
+app.all("/answer", (req, res) => {
+  const host = process.env.PUBLIC_HOST || req.headers.host || `localhost:${PORT}`;
+  res.type("application/xml").send(answerXml(host));
+});
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/stream" });
