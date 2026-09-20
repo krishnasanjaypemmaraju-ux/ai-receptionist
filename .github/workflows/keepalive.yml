@@ -1,0 +1,12 @@
+name: keep-alive
+# Pings the Render service every ~10 min so the free instance never sleeps.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping connector
+        run: curl -s -m 90 https://ai-receptionist-k9jw.onrender.com/ || true
