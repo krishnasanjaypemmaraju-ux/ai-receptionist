@@ -6,10 +6,25 @@ import { plivoToGemini, geminiToPlivo } from "./lib/audio.js";
 
 const PORT = process.env.PORT || 3000;
 
+// --- in-memory log buffer so we can inspect recent activity via /debug ---
+const LOGS = [];
+function pushLog(prefix, args) {
+  const line = new Date().toISOString().slice(11, 23) + " " + prefix +
+    args.map((x) => (typeof x === "string" ? x : (() => { try { return JSON.stringify(x); } catch { return String(x); } })())).join(" ");
+  LOGS.push(line); if (LOGS.length > 400) LOGS.shift();
+}
+const _log = console.log.bind(console), _err = console.error.bind(console);
+console.log = (...a) => { pushLog("", a); _log(...a); };
+console.error = (...a) => { pushLog("ERR ", a); _err(...a); };
+
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (_req, res) => res.send("Harsha AI receptionist is running."));
+app.get("/debug", (req, res) => {
+  if (req.query.token !== (process.env.BOOKING_SECRET || "")) return res.status(401).send("unauthorized");
+  res.type("text/plain").send(LOGS.slice(-250).join("\n"));
+});
 
 // Plivo hits this when a (forwarded) call arrives. We answer and open a bidirectional stream.
 function answerXml(host) {

@@ -3,3 +3,6 @@ node_modules/
 *.log
 .DS_Store
 test-gemini.js
+test-input.js
+test-tool.js
+test-runtool.js
